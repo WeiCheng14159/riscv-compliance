@@ -33,10 +33,21 @@
 
 #define SEXT_IMM(x) ((x) | (-(((x) >> 11) & 1) << 11))
 
+#if (__riscv_xlen==32)
+#    define RSIZE 4
+#    define SX sw
+#    define LX lw
+#endif
+#if (__riscv_xlen==64)
+#    define RSIZE 8
+#    define SX sd
+#    define LX ld
+#endif
+
 // Base function for integer operations
 #define TEST_CASE(destreg, correctval, swreg, offset, code... ) \
     code; \
-    sw destreg, offset(swreg); \
+    SX destreg, offset(swreg); \
     RVTEST_IO_ASSERT_GPR_EQ(x31, destreg, correctval) \
 
 // Base functions for single precision floating point operations
@@ -400,32 +411,32 @@
       inst 1f; \
       li reg, 0x123ab; \
 1: \
-      sw reg, offset(swreg); \
+      SX reg, offset(swreg); \
       RVTEST_IO_ASSERT_GPR_EQ(x31, reg, val); \
 
 #define TEST_CL(inst, reg, imm, swreg, offset) \
       la reg, test_data; \
       inst reg, imm(reg); \
-      sw reg, offset(swreg); \
+      SX reg, offset(swreg); \
 
 // lw reg, imm(x2)
 // c.lwsp reg, imm(x2)
 #define TEST_CLWSP(reg, imm, swreg, offset) \
       la x2, test_data; \
       c.lwsp reg, imm(x2); \
-      sw reg, offset(swreg); \
+      SX reg, offset(swreg); \
 
 #define TEST_CLDSP(reg, imm, swreg, offset) \
       la x2, test_data; \
       c.ldsp reg, imm(x2); \
-      sw reg, offset(swreg); \
+      SX reg, offset(swreg); \
 
 #define TEST_CSW(test_data, inst, reg1, reg2, val, imm, swreg, offset) \
       li reg1, val; \
       la reg2, test_data; \
       inst reg1, imm(reg2); \
       lw reg1, imm(reg2); \
-      sw reg1, offset(swreg); \
+      SX reg1, offset(swreg); \
       RVTEST_IO_ASSERT_GPR_EQ(x31, reg1, val); \
 
 #define TEST_CSWSP(test_data, reg, val, imm, swreg, offset) \
@@ -433,7 +444,7 @@
       li reg, val; \
       c.swsp reg, imm(x2); \
       lw reg, imm(x2); \
-      sw reg, offset(swreg); \
+      SX reg, offset(swreg); \
       RVTEST_IO_ASSERT_GPR_EQ(x31, reg, val); \
 
 #define TEST_CSDSP(test_data, reg, val, imm, swreg, offset) \
@@ -441,7 +452,7 @@
       li reg, val; \
       c.sdsp reg, imm(x2); \
       lw reg, imm(x2); \
-      sw reg, offset(swreg); \
+      SX reg, offset(swreg); \
       RVTEST_IO_ASSERT_GPR_EQ(x31, reg, val); \
 
 #define TEST_CBEQZ(reg, val, swreg, offset) \
@@ -450,7 +461,7 @@
       c.beqz reg, 3f; \
       li reg, 0x123ab; \
 3: \
-      sw reg, offset(swreg); \
+      SX reg, offset(swreg); \
       RVTEST_IO_ASSERT_GPR_EQ(x31, reg, 0x0); \
 
 #define TEST_CBNEZ(reg, val, swreg, offset) \
@@ -458,7 +469,7 @@
       c.bnez reg, 4f; \
       li reg, 0x0; \
 4: \
-      sw reg, offset(swreg); \
+      SX reg, offset(swreg); \
       RVTEST_IO_ASSERT_GPR_EQ(x31, reg, val); \
 
 #define TEST_FMVXS(test_num, destreg, reg, correctval, val, swreg, offset) \
